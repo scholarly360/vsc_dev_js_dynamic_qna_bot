@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interface PROBE</title>
+    <style>
+        .chat-interface {
+            position: fixed;
+            bottom: 0;
+            width: 95%; /* Full width */
+            background-color: #4CAF50; /* Green color */
+            padding: 20px; /* Increased padding */
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            border-radius: 20px 20px 0 0; /* Rounded top corners */
+        }
+        .chat-interface form {
+            display: flex;
+            align-items: center;
+        }
+        .chat-interface input[type="text"] {
+            flex: 1;
+            padding: 15px; /* Increased padding */
+            border-radius: 10px;
+            border: none;
+            margin-right: 10px;
+        }
+        .chat-interface button {
+            padding: 15px 20px; /* Increased padding */
+            border: none;
+            border-radius: 10px;
+            background-color: #fff;
+            color: #4CAF50;
+            cursor: pointer;
+        }
+        .messages {
+            margin-bottom: 100px; /* Space for the chat interface */
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .green-border {
+            border: 2px solid green;
+            border-radius: 8px; /* Adjust for more or less roundness */
+            padding: 8px; /* Optional: Adds space inside the border */
+            display: inline-block; /* Ensures proper rendering */
+            width: 95%; /* Full width */
+        }
+    </style>
+</head>
+<body>
+    <div class="messages" id="messages">
+        <!-- Messages will be loaded here -->
+    </div>
+
+    <div class="chat-interface">
+        <form hx-post="/sendmessage" >
+            <input type="text" name="message" placeholder="Type your proposal question here" required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.querySelector(".chat-interface form");
+            const messagesDiv = document.getElementById("messages");
+
+            form.addEventListener("submit", async function (event) {
+                event.preventDefault(); // Prevent default form submission
+
+                const messageInput = form.querySelector("input[name='message']");
+                const messageText = messageInput.value.trim();
+
+                if (!messageText) return; // Don't send empty messages
+
+                try {
+                    const response = await fetch("/sendmessage", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ message: messageText }),
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        // Create message element
+                        const messageElement = document.createElement("p");
+                        messageElement.classList.add("green-border");
+                        messageElement.textContent = data.message;
+                        
+
+                        // Append citations
+                        if (data.citations && data.citations.length > 0) {
+                            const citationList = document.createElement("ul");
+                            data.citations.forEach(citation => {
+                                const listItem = document.createElement("li");
+                                const link = document.createElement("a");
+                                link.href = citation.url;
+                                link.textContent = citation.name;
+                                link.target = "_blank";
+                                listItem.appendChild(link);
+                                citationList.appendChild(listItem);
+                            });
+                            messageElement.appendChild(citationList);
+                        }
+
+                        messagesDiv.appendChild(messageElement);
+                        
+                        form.reset(); // Clear the input field
+                    } else {
+                        console.error("Failed to send message");
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                }
+            });
+        });
+
+
+
+    </script>
+</body>
+</html>
